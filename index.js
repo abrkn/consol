@@ -1,5 +1,8 @@
 const { inspect } = require('util');
 const { EOL } = require('os');
+const micromatch = require('micromatch');
+
+const { DEBUG = '' } = process.env;
 
 const noop = function() {};
 
@@ -12,20 +15,21 @@ const types = {
   error: 4,
 };
 
+const getStackTrace = () =>
+  new Error().stack
+    .split(/\n/g)
+    .slice(1)
+    .map((v, i) => (i ? v : v.slice(1)))
+    .join(EOL);
+
+const prevConsole = Object.keys(types).reduce((prev, name) => ({ ...prev, [name]: console[name].bind(console) }), {});
+
 function applyTo(target, options = {}) {
   const { prefix, enabled = true } = options;
 
-  function logForType(original, type, ...args) {
+  function logForType(type, ...args) {
     if (type === 'trace') {
-      args = [
-        ...args,
-        '\n',
-        new Error().stack
-          .split(/\n/g)
-          .slice(1)
-          .map((v, i) => (i ? v : v.slice(1)))
-          .join(EOL),
-      ];
+      args = [...args, '\n', getStackTrace()];
     }
 
     const formatted = args
@@ -39,7 +43,7 @@ function applyTo(target, options = {}) {
       type = 'debug';
     }
 
-    return original(formatted);
+    return prevConsole[type](formatted);
   }
 
   for (const type of Object.keys(types)) {
@@ -48,20 +52,26 @@ function applyTo(target, options = {}) {
       continue;
     }
 
-    var original = type === 'trace' ? console.log.bind(console) : console[type].bind(console);
-
-    target[type] = logForType.bind(target, original, type);
+    target[type] = logForType.bind(target, type);
   }
 
-  target.global = function(original, type, ...args) {
-    return logForType(original, type, ...args);
-  };
+  target.global = logForType;
 
   return target;
 }
 
-exports.filter = null;
-
 const consol = applyTo({});
+
+consol.types = types;
+
+consol.debugger = function(prefix) {
+  const enabled = micromatch.any(prefix, DEBUG.split(/,/g));
+
+  if (!enabled) {
+    return noop;
+  }
+
+  return applyTo({}, { prefix: `(${prefix})` }).debug;
+};
 
 module.exports = consol;
