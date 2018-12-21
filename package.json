@@ -1,0 +1,22 @@
+{
+  "name": "consol",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "micromatch": "3.1.10"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abrkn/consol.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abrkn/consol/issues"
+  },
+  "homepage": "https://github.com/abrkn/consol#readme"
+}
