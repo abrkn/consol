@@ -1,6 +1,7 @@
 const { inspect } = require('util');
 const { EOL } = require('os');
 const micromatch = require('micromatch');
+const colors = require('colors/safe');
 
 const { DEBUG = '' } = process.env;
 
@@ -13,6 +14,15 @@ const types = {
   log: 2,
   warn: 3,
   error: 4,
+};
+
+const typeColors = {
+  debug: 'gray',
+  trace: 'gray',
+  info: 'white',
+  log: 'white',
+  warn: 'yellow',
+  error: 'red',
 };
 
 const getStackTrace = () =>
@@ -32,11 +42,13 @@ function applyTo(target, options = {}) {
       args = [...args, '\n', getStackTrace()];
     }
 
+    const typeFormatted = colors[typeColors[type]](type.toUpperCase());
+
     const formatted = args
-      .map(_ => (typeof _ === 'object' ? inspect(_) : _))
+      .map(_ => (typeof _ === 'object' ? inspect(_, { colors: true }) : _))
       .join(' ')
       .split(/\n/g)
-      .map(line => [type.toUpperCase(), ...(prefix ? [prefix] : []), line].join(' '))
+      .map(line => [typeFormatted, ...(prefix ? [prefix] : []), line].join(' '))
       .join(EOL);
 
     if (type === 'trace') {
